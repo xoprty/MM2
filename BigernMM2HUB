@@ -1,8 +1,7 @@
--- Project Ironclad Compliant Script for MM2 on Delta
+-- Project Ironclad Revised MM2 Script for Delta Executor
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
@@ -11,244 +10,213 @@ local mouse = player:GetMouse()
 
 local isAutoAimEnabled = false
 local isNoclipEnabled = false
-local isMurderer = false
+local isSheriff = false
 
--- GUI Creation
+-- ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "BigernHubMM2"
+screenGui.Name = "BigernHub_MM2"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
 
--- Circular Menu Button
-local circleButton = Instance.new("TextButton")
-circleButton.Size = UDim2.new(0, 80, 0, 80)
-circleButton.Position = UDim2.new(0.5, -40, 0.5, -40)
-circleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
-circleButton.Text = "MM2"
-circleButton.TextColor3 = Color3.new(1,1,1)
-circleButton.TextScaled = true
-circleButton.Font = Enum.Font.Arcade
-circleButton.Parent = screenGui
-circleButton.BorderSizePixel = 0
-circleButton.Shape = Enum.PartType.Ball -- Approximate circle via properties if needed, or use ImageLabel for perfect circle
+-- Circular Start Button
+local circleBtn = Instance.new("TextButton")
+circleBtn.Size = UDim2.new(0, 90, 0, 90)
+circleBtn.Position = UDim2.new(0, 50, 0.8, -45)
+circleBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+circleBtn.Text = "🔄"
+circleBtn.TextColor3 = Color3.new(1,1,1)
+circleBtn.TextScaled = true
+circleBtn.Font = Enum.Font.GothamBold
+circleBtn.Parent = screenGui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(1, 0)
-corner.Parent = circleButton
+local circleCorner = Instance.new("UICorner")
+circleCorner.CornerRadius = UDim.new(0.5, 0)
+circleCorner.Parent = circleBtn
 
--- Rectangular Menu Frame (initially hidden)
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 500, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-mainFrame.BorderSizePixel = 0
-mainFrame.Visible = false
-mainFrame.Parent = screenGui
+-- Horizontal Rectangular Menu
+local menuFrame = Instance.new("Frame")
+menuFrame.Size = UDim2.new(0, 620, 0, 180)  -- Horizontal layout
+menuFrame.Position = UDim2.new(0.3, 0, 0.4, 0)
+menuFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+menuFrame.Visible = false
+menuFrame.Parent = screenGui
 
-local frameCorner = Instance.new("UICorner")
-frameCorner.CornerRadius = UDim.new(0, 10)
-frameCorner.Parent = mainFrame
+local menuCorner = Instance.new("UICorner")
+menuCorner.CornerRadius = UDim.new(0, 12)
+menuCorner.Parent = menuFrame
 
--- Draggable functionality
-local dragging = false
-local dragInput
-local dragStart
-local startPos
-
-mainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = mainFrame.Position
+-- Draggable
+local isDragging = false
+local dragStartPos
+menuFrame.InputBegan:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        dragStartPos = inp.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(inp)
+    if isDragging and inp.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = inp.Position - dragStartPos
+        menuFrame.Position = UDim2.new(menuFrame.Position.X.Scale, menuFrame.Position.X.Offset + delta.X, menuFrame.Position.Y.Scale, menuFrame.Position.Y.Offset + delta.Y)
+    end
+end)
+menuFrame.InputEnded:Connect(function(inp)
+    if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
     end
 end)
 
-mainFrame.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
+-- Close Button X
+local closeX = Instance.new("TextButton")
+closeX.Size = UDim2.new(0, 40, 0, 40)
+closeX.Position = UDim2.new(1, -45, 0, 5)
+closeX.BackgroundTransparency = 1
+closeX.Text = "✕"
+closeX.TextColor3 = Color3.fromRGB(255, 50, 50)
+closeX.TextScaled = true
+closeX.Font = Enum.Font.SourceSansBold
+closeX.Parent = menuFrame
+
+closeX.MouseButton1Click:Connect(function()
+    menuFrame.Visible = false
+    circleBtn.Visible = true
+end)
+
+-- Title with Rainbow
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0, 380, 0, 45)
+title.Position = UDim2.new(0, 15, 0, 8)
+title.BackgroundTransparency = 1
+title.Text = "bigernhub | MM2"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+title.Font = Enum.Font.ArialBold  -- Arial Black style
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = menuFrame
+
+local rainbowHue = 0
+RunService.RenderStepped:Connect(function(dt)
+    rainbowHue = (rainbowHue + dt * 1.2) % 1
+    if title and title.Parent then
+        title.TextColor3 = Color3.fromHSV(rainbowHue, 1, 1)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
+-- Main Section
+local mainSect = Instance.new("TextLabel")
+mainSect.Size = UDim2.new(0, 120, 0, 35)
+mainSect.Position = UDim2.new(0, 20, 0, 65)
+mainSect.BackgroundTransparency = 1
+mainSect.Text = "Main"
+mainSect.TextColor3 = Color3.fromRGB(220, 220, 220)
+mainSect.TextScaled = true
+mainSect.Font = Enum.Font.Impact
+mainSect.Parent = menuFrame
 
--- Close Button (X)
-local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 30, 0, 30)
-closeButton.Position = UDim2.new(1, -35, 0, 5)
-closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-closeButton.Text = "X"
-closeButton.TextColor3 = Color3.new(1,1,1)
-closeButton.TextScaled = true
-closeButton.Font = Enum.Font.SourceSansBold
-closeButton.Parent = mainFrame
+-- Autoaim (Sheriff)
+local aaLabel = Instance.new("TextLabel")
+aaLabel.Size = UDim2.new(0, 220, 0, 40)
+aaLabel.Position = UDim2.new(0, 20, 0, 105)
+aaLabel.BackgroundTransparency = 1
+aaLabel.Text = "Autoaim (Sheriff)"
+aaLabel.TextColor3 = Color3.new(1,1,1)
+aaLabel.TextXAlignment = Enum.TextXAlignment.Left
+aaLabel.TextScaled = true
+aaLabel.Font = Enum.Font.Impact
+aaLabel.Parent = menuFrame
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 5)
-closeCorner.Parent = closeButton
+local aaToggle = Instance.new("TextButton")
+aaToggle.Size = UDim2.new(0, 80, 0, 38)
+aaToggle.Position = UDim2.new(0, 250, 0, 105)
+aaToggle.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+aaToggle.Text = "OFF"
+aaToggle.TextColor3 = Color3.new(1,1,1)
+aaToggle.TextScaled = true
+aaToggle.Font = Enum.Font.Impact
+aaToggle.Parent = menuFrame
 
-closeButton.MouseButton1Click:Connect(function()
-    mainFrame.Visible = false
-    circleButton.Visible = true
-end)
-
--- Title
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(0, 300, 0, 50)
-titleLabel.Position = UDim2.new(0, 10, 0, 10)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "bigernhub | MM2"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextScaled = true
-titleLabel.Font = Enum.Font.ArialBold -- Arial Black approximation
-titleLabel.Parent = mainFrame
-
--- Rainbow effect for title
-local hue = 0
-RunService.RenderStepped:Connect(function()
-    if titleLabel and titleLabel.Parent then
-        hue = (hue + 0.01) % 1
-        titleLabel.TextColor3 = Color3.fromHSV(hue, 1, 1)
-    end
-end)
-
--- Main Section Label
-local mainLabel = Instance.new("TextLabel")
-mainLabel.Size = UDim2.new(0, 150, 0, 30)
-mainLabel.Position = UDim2.new(0, 10, 0, 70)
-mainLabel.BackgroundTransparency = 1
-mainLabel.Text = "Main"
-mainLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-mainLabel.TextScaled = true
-mainLabel.Font = Enum.Font.Impact
-mainLabel.Parent = mainFrame
-
--- Autoaim Toggle
-local autoAimLabel = Instance.new("TextLabel")
-autoAimLabel.Size = UDim2.new(0, 200, 0, 30)
-autoAimLabel.Position = UDim2.new(0, 10, 0, 110)
-autoAimLabel.BackgroundTransparency = 1
-autoAimLabel.Text = "Autoaim"
-autoAimLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoAimLabel.TextXAlignment = Enum.TextXAlignment.Left
-autoAimLabel.Font = Enum.Font.Impact
-autoAimLabel.Parent = mainFrame
-
-local autoAimToggle = Instance.new("TextButton")
-autoAimToggle.Size = UDim2.new(0, 60, 0, 30)
-autoAimToggle.Position = UDim2.new(0, 220, 0, 110)
-autoAimToggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-autoAimToggle.Text = "OFF"
-autoAimToggle.TextColor3 = Color3.new(0,0,0)
-autoAimToggle.Font = Enum.Font.Impact
-autoAimToggle.Parent = mainFrame
-
-autoAimToggle.MouseButton1Click:Connect(function()
+aaToggle.MouseButton1Click:Connect(function()
     isAutoAimEnabled = not isAutoAimEnabled
-    autoAimToggle.Text = isAutoAimEnabled and "ON" or "OFF"
-    autoAimToggle.BackgroundColor3 = isAutoAimEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    aaToggle.Text = isAutoAimEnabled and "ON" or "OFF"
+    aaToggle.BackgroundColor3 = isAutoAimEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
 end)
 
--- Noclip Toggle
-local noclipLabel = Instance.new("TextLabel")
-noclipLabel.Size = UDim2.new(0, 200, 0, 30)
-noclipLabel.Position = UDim2.new(0, 10, 0, 150)
-noclipLabel.BackgroundTransparency = 1
-noclipLabel.Text = "Noclip"
-noclipLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-noclipLabel.TextXAlignment = Enum.TextXAlignment.Left
-noclipLabel.Font = Enum.Font.Impact
-noclipLabel.Parent = mainFrame
+-- Noclip
+local ncLabel = Instance.new("TextLabel")
+ncLabel.Size = UDim2.new(0, 220, 0, 40)
+ncLabel.Position = UDim2.new(0, 20, 0, 150)
+ncLabel.BackgroundTransparency = 1
+ncLabel.Text = "Noclip"
+ncLabel.TextColor3 = Color3.new(1,1,1)
+ncLabel.TextXAlignment = Enum.TextXAlignment.Left
+ncLabel.TextScaled = true
+ncLabel.Font = Enum.Font.Impact
+ncLabel.Parent = menuFrame
 
-local noclipToggle = Instance.new("TextButton")
-noclipToggle.Size = UDim2.new(0, 60, 0, 30)
-noclipToggle.Position = UDim2.new(0, 220, 0, 150)
-noclipToggle.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-noclipToggle.Text = "OFF"
-noclipToggle.TextColor3 = Color3.new(0,0,0)
-noclipToggle.Font = Enum.Font.Impact
-noclipToggle.Parent = mainFrame
+local ncToggle = Instance.new("TextButton")
+ncToggle.Size = UDim2.new(0, 80, 0, 38)
+ncToggle.Position = UDim2.new(0, 250, 0, 150)
+ncToggle.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+ncToggle.Text = "OFF"
+ncToggle.TextColor3 = Color3.new(1,1,1)
+ncToggle.TextScaled = true
+ncToggle.Font = Enum.Font.Impact
+ncToggle.Parent = menuFrame
 
-noclipToggle.MouseButton1Click:Connect(function()
+ncToggle.MouseButton1Click:Connect(function()
     isNoclipEnabled = not isNoclipEnabled
-    noclipToggle.Text = isNoclipEnabled and "ON" or "OFF"
-    noclipToggle.BackgroundColor3 = isNoclipEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+    ncToggle.Text = isNoclipEnabled and "ON" or "OFF"
+    ncToggle.BackgroundColor3 = isNoclipEnabled and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
 end)
 
--- Open menu on circle click
-circleButton.MouseButton1Click:Connect(function()
-    mainFrame.Visible = true
-    circleButton.Visible = false
+-- Open Menu
+circleBtn.MouseButton1Click:Connect(function()
+    menuFrame.Visible = true
+    circleBtn.Visible = false
 end)
 
--- Noclip Logic
-local noclipConnection
-local function handleNoclip()
-    if isNoclipEnabled then
-        if not noclipConnection then
-            noclipConnection = RunService.Stepped:Connect(function()
-                if character then
-                    for _, part in pairs(character:GetDescendants()) do
-                        if part:IsA("BasePart") and part.CanCollide then
-                            part.CanCollide = false
-                        end
-                    end
-                end
-            end)
+-- Sheriff Detection
+local function updateRole()
+    isSheriff = false
+    if character then
+        local tool = character:FindFirstChildOfClass("Tool")
+        if tool and (tool.Name:lower():find("gun") or tool.Name == "Sheriff") then
+            isSheriff = true
         end
-    else
-        if noclipConnection then
-            noclipConnection:Disconnect()
-            noclipConnection = nil
-        end
-        -- Restore collisions if needed
     end
 end
 
-RunService.Heartbeat:Connect(handleNoclip)
-
--- Role Detection for Murderer
-player.CharacterAdded:Connect(function(newChar)
-    character = newChar
+-- Noclip Handler
+local noclipConn
+RunService.Stepped:Connect(function()
+    if isNoclipEnabled and character then
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
 end)
 
-local function checkRole()
-    -- MM2 role detection logic (adjust based on current game structure)
-    if Workspace:FindFirstChild("Knife") or player:FindFirstChild("Knife") then -- Example detection
-        isMurderer = true
-    else
-        isMurderer = false
-    end
-end
-
-RunService.Heartbeat:Connect(checkRole)
-
--- Autoaim Logic (simple prediction on shot)
-local function autoAim(target)
-    if not isAutoAimEnabled or not isMurderer or not target then return end
-    local root = character:FindFirstChild("HumanoidRootPart")
-    local targetRoot = target:FindFirstChild("HumanoidRootPart")
-    if root and targetRoot then
-        local direction = (targetRoot.Position - root.Position).Unit
-        -- Simulate aim correction (for gun tools)
-        mouse.Target = targetRoot
-        -- Additional bullet trajectory correction can be added via remote hooks if available in game
-    end
-end
-
--- Detect shooting (example for gun activation)
+-- Autoaim for Sheriff (headshot correction on shot)
 mouse.Button1Down:Connect(function()
-    if isAutoAimEnabled and isMurderer then
+    updateRole()
+    if isAutoAimEnabled and isSheriff then
         local target = mouse.Target
         if target and target.Parent:FindFirstChild("Humanoid") then
-            autoAim(target.Parent)
+            local humRoot = target.Parent:FindFirstChild("HumanoidRootPart")
+            if humRoot then
+                -- Silent aim correction to head
+                local head = target.Parent:FindFirstChild("Head")
+                if head then
+                    mouse.Target = head
+                    -- Additional projectile adjustment simulation
+                end
+            end
         end
     end
 end)
 
--- Initial setup complete
-print("BigernHub MM2 Loaded - Ironclad Compliance")
+RunService.Heartbeat:Connect(updateRole)
+
+print("[IRONCLAD] BigernHub MM2 Script Loaded - Sheriff Autoaim & Noclip Active")
